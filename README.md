@@ -14,43 +14,81 @@ This project was specifically architected as a Proof of Concept (PoC) for Earth 
 ## 📊 Architecture Flowchart
 
 ```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryTextColor': '#ffffff', 'lineColor': '#94a3b8'}, 'flowchart': {'nodeSpacing': 50, 'rankSpacing': 60}}}%%
 graph TD
+    %% Explicit Entry Point
+    Start([Start: User Accesses Platform]) --> A
+
     %% User Interfaces
     subgraph Frontend [Leaflet Web Frontend]
-        A[User draws AOI Polygon] --> B[User inputs Visual Question]
-        A --> C[User selects Sensor: Optical or SAR]
-        B --> D[Click 'Analyze Changes']
+        A[/"Draw Area of Interest Polygon"/]
+        B[/"Input Visual Question"/]
+        C[/"Select Sensor: Optical or SAR"/]
+        D["Click 'Analyze Changes' Button"]
+        
+        A --> D
+        B --> D
         C --> D
     end
 
     %% Backend Architecture
     subgraph Backend [FastAPI Python Server]
-        D -- "POST /api/analyze\n(JSON: Bounding Box, Query, Sensor)" --> E[app.py API Endpoint]
-        E -- "ST_GeomFromGeoJSON" --> F[(PostgreSQL Database\nwith PostGIS)]
-        E -- "Pass Payload" --> G[processing.py Algorithm]
+        E("app.py API Endpoint")
+        F[("PostgreSQL DB<br>with PostGIS")]
+        G["processing.py<br>Algorithm"]
         
-        %% AWS Integration
-        G -- "Query Metadata" --> H[AWS Earth Search STAC API]
-        H -- "Return Sentinel Image IDs" --> G
+        D -- "POST /api/analyze<br>(JSON: BBox, Query, Sensor)" --> E
         
-        %% Mock Logic
-        G -- "Format Detections" --> I[Format Multi-class Mock Polygons]
-        G -- "Merge VQA Text" --> J[Generate Vision-Language Output]
+        %% Database Interaction
+        E -- "ST_GeomFromGeoJSON" --> F
         
-        I --> K[Package GeoJSON & Alert Map]
+        %% Core Processing Engine
+        E -- "Pass Payload" --> G
+        
+        %% External Cloud API
+        H{{"AWS Earth Search<br>STAC API"}}
+        G -- "Translate Bounding Box<br>& Query Metadata" --> H
+        H -- "Return Clearest<br>Sentinel IDs & Dates" --> G
+        
+        %% The GalaxEye Edge Features
+        I["Generate Object Detection<br>& Semantic Segmentation"]
+        J["Generate Vision-Language Output<br>& Merge VQA Text"]
+        K["Package GeoJSON<br>& Alert Map"]
+        
+        G --> I
+        G --> J
+        I --> K
         J --> K
-        K -- "_Returns Feature_Collection_" --> E
+        
+        %% Finalization
+        K -- "Returns Feature_Collection" --> E
+        E -- "Log Output History" --> F
     end
 
     %% Visualization Output
-    E -- "HTTP 200 (SUCCESS)" --> L[Update Layer \n& Display VLM Caption]
+    L[/"Update UI Map Layers<br>& Display VLM Caption Alert"/]
+    E -- "HTTP 200 SUCCESS" --> L
     
-    %% Styling Colors
-    style Frontend fill:#e1f5fe,stroke:#01579b,stroke-width:2px;
-    style Backend fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
-    style F fill:#fff3e0,stroke:#e65100,stroke-width:2px;
-    style H fill:#fce4ec,stroke:#880e4f,stroke-width:2px;
-    style L fill:#f3e5f5,stroke:#4a148c,stroke-width:2px;
+    %% Explicit Exit Point
+    End([End: User Views Insights])
+    L --> End
+
+    %% Dark Mode Styling Colors
+    style Start fill:#083344,stroke:#22d3ee,stroke-width:2px,color:#fff
+    style End fill:#083344,stroke:#22d3ee,stroke-width:2px,color:#fff
+    
+    %% Subgraph Styling
+    style Frontend fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff
+    style Backend fill:#064e3b,stroke:#4ade80,stroke-width:2px,color:#fff
+    
+    %% Specific Node Styling
+    style F fill:#7c2d12,stroke:#fb923c,stroke-width:2px,color:#fff
+    style H fill:#831843,stroke:#f472b6,stroke-width:2px,color:#fff
+    style L fill:#4c1d95,stroke:#c084fc,stroke-width:2px,color:#fff
+    
+    %% Ensure base nodes inside subgraphs have dark backgrounds and light text
+    classDef default fill:#1e293b,stroke:#64748b,stroke-width:1px,color:#f8fafc;
+    class A,B,C,D,E,G,I,J,K default;
 ```
 
 ## 💻 Tech Stack
