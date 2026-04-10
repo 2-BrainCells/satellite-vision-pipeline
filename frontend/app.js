@@ -22,12 +22,12 @@ const changesSource = new ol.source.Vector();
 const changesLayer = new ol.layer.Vector({
     source: changesSource,
     style: function(feature) {
-        const classType = feature.get('class_type') || '';
-        let color = 'rgba(255, 0, 0, 0.5)'; // Universal Red for structures
+        let color = 'rgba(255, 0, 0, 0.5)'; // Red for Optical
         let stroke = 'red';
         
-        if (classType.includes('Vegetation')) {
-            color = 'rgba(255, 255, 0, 0.5)'; // Yellow for Vegetation
+        // Color SAR geometry yellow and Optical red based on current pipeline
+        if (window.currentUsedSensor === 'sar') {
+            color = 'rgba(255, 255, 0, 0.5)'; // Yellow for SAR
             stroke = '#b8860b'; // Dark Goldenrod for outline
         }
         
@@ -161,6 +161,7 @@ document.getElementById('analyze-btn').addEventListener('click', async () => {
 
             // Step 2: Trigger Analysis with GalaxEye attributes
             const sensorVal = document.getElementById('sensor-type').value;
+            window.currentUsedSensor = sensorVal; // Attach globally for OpenLayers styler
 
             const reqBody = {
                 sensor: sensorVal,
